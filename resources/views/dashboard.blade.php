@@ -5,25 +5,27 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
-
-                    <!-- THIS IS THE BUTTON PART TO ADD -->
-                    <div class="mt-6">
-                        <a href="{{ route('properties.create') }}" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-bold">
-                            + Post a New Keja
-                        </a>
-                        <a href="{{ route('properties.index') }}" class="inline-block ml-4 bg-gray-800 text-white px-6 py-2 rounded-md hover:bg-gray-900 font-bold">
-                         Manage My Listings
-                        </a>
-                    </div>
-                    <!-- END OF BUTTON PART -->
-
+    <div class="p-6 text-gray-900">
+    @if(auth()->user()->is_verified)
+        <h3 class="text-lg font-bold text-green-600 mb-4">✅ Your account is Verified</h3>
+        <a href="{{ route('properties.create') }}" class="bg-blue-600 text-white px-6 py-2 rounded-md font-bold hover:bg-blue-700">
+            + Post a New Keja
+        </a>
+    @else
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Account Pending:</strong> You cannot post houses yet. Please send your ID/Business documents to 
+                        <span class="font-bold">admin@urbankeja.com</span> for verification.
+                    </p>
                 </div>
             </div>
         </div>
+    @endif
+
+    <div class="mt-8">
+        <a href="{{ route('properties.index') }}" class="text-gray-600 underline">Manage My Listings</a>
     </div>
+</div>
 </x-app-layout>
