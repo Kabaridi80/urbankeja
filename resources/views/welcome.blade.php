@@ -21,37 +21,38 @@
 
     <!-- 1. NAVIGATION BAR -->
     <!-- Optimized Navigation -->
+<!-- Updated Navigation -->
 <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <!-- Brand -->
+        
+        <!-- Left: Brand Logo -->
         <a href="/" class="text-2xl font-extrabold text-blue-600 tracking-tight flex items-center gap-2">
             URBAN<span class="text-gray-900">KEJA</span>
-            <span class="bg-blue-100 text-blue-600 text-[10px] uppercase px-2 py-0.5 rounded-full tracking-widest">Verified</span>
+            <span class="bg-blue-100 text-blue-600 text-[10px] uppercase px-2 py-0.5 rounded-full tracking-widest font-black">Verified</span>
         </a>
 
-        <!-- Desktop Links -->
+        <!-- Center: Links (Home Services & How it Works) -->
         <div class="hidden md:flex space-x-8 font-semibold text-gray-600 items-center">
-           <a href="#services" class="hover:text-blue-600 transition text-sm">Home Services</a>
-           <a href="#how-it-works" class="hover:text-blue-600 transition text-sm">How it Works</a>
-            
-            <!-- We only show Login if the user is a GUEST -->
-            @guest
-                <a href="/login" class="text-sm text-gray-400 border-l pl-8 hover:text-blue-600">Agent Portal</a>
-            @endguest
-
-            <!-- We show Dashboard if they are already logged in -->
-            @auth
-                <a href="/dashboard" class="text-sm text-blue-600 border-l pl-8 font-bold">My Dashboard</a>
-            @endauth
+            <a href="#services" class="hover:text-blue-600 transition text-sm">Home Services</a>
+            <a href="#how-it-works" class="hover:text-blue-600 transition text-sm">How it Works</a>
         </div>
 
-        <!-- Action Button -->
-        <a href="{{ route('properties.create') }}" class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            List Your Keja
-        </a>
+        <!-- Right: Primary Action Button (Agent Portal / Dashboard) -->
+        <div class="flex items-center gap-4">
+            @guest
+                <!-- If not logged in, show Agent Portal button -->
+                <a href="{{ route('agent.portal') }}" class="bg-blue-600 text-white px-8 py-2.5 rounded-full font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition flex items-center gap-2">
+                    Agent Portal
+                </a>
+            @endguest
+
+            @auth
+                <!-- If logged in, show Dashboard button -->
+                <a href="/dashboard" class="bg-gray-900 text-white px-8 py-2.5 rounded-full font-bold shadow-lg shadow-gray-200 hover:bg-black transition flex items-center gap-2">
+                    My Dashboard
+                </a>
+            @endauth
+        </div>
     </div>
 </nav>
 
@@ -109,37 +110,58 @@
        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Featured Listings</h2>
     <p class="text-gray-500">Handpicked properties just for you.</p>
     
-</div>>
+</div>
 
         <!-- LOOP START -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-            @foreach($properties as $property)
-<!-- We wrap the whole div in an anchor tag -->
-<a href="/properties/{{ $property->id }}" class="group block bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+       @foreach($properties as $property)
+<!-- We wrap the whole card in a link for better UX -->
+<a href="{{ route('properties.show', $property->id) }}" class="group block bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+    
+    <!-- Image Section -->
     <div class="relative overflow-hidden">
-        <!-- Property Image -->
-        <img src="{{ asset('storage/' . $property->image) }}" 
+        <img src="{{ $property->image }}" 
              onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'"
              class="h-64 w-full object-cover group-hover:scale-105 transition duration-500">
         
-        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-sm font-bold shadow-sm text-blue-600">
+        <!-- Category Badge (Bedsitter, etc.) -->
+        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-blue-600 shadow-sm">
             {{ $property->type }}
         </div>
     </div>
 
+    <!-- Content Section -->
     <div class="p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition">{{ $property->title }}</h3>
-        <p class="text-gray-400 text-sm mb-4 flex items-center italic">
-             {{ $property->estate }}, {{ $property->city }}
+        <!-- Title & Verified Badge -->
+        <div class="mb-3">
+            <h3 class="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition truncate">
+                {{ ucfirst($property->title) }}
+            </h3>
+            
+            @if($property->user && $property->user->is_verified)
+                <div class="flex items-center gap-1 text-blue-500 mt-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.64.304 1.24.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+                    </svg>
+                    <span class="text-[9px] font-black uppercase tracking-tighter">Verified Agent</span>
+                </div>
+            @endif
+        </div>
+
+        <!-- Location (One Time Only) -->
+        <p class="text-gray-400 text-sm mb-4 flex items-center gap-1 italic">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            {{ $property->estate }}, {{ ucfirst($property->city) }}
         </p>
-        <div class="flex justify-between items-center">
+
+        <!-- Price & Button (One Time Only) -->
+        <div class="flex justify-between items-center pt-4 border-t border-gray-50">
             <span class="text-2xl font-black text-gray-900">Ksh {{ number_format($property->price) }}</span>
-            <!-- Button stays for visual cue, but the whole card is now clickable -->
-            <span class="bg-gray-100 text-gray-900 px-4 py-2 rounded-xl font-bold group-hover:bg-blue-600 group-hover:text-white transition text-sm">Details</span>
+            <span class="bg-gray-100 text-gray-900 px-4 py-2 rounded-xl font-bold group-hover:bg-blue-600 group-hover:text-white transition text-xs">Details</span>
         </div>
     </div>
 </a>
-            @endforeach
+@endforeach
         </div>
         <!-- HOW IT WORKS SECTION -->
 <div id="how-it-works" class="py-20 bg-white">
@@ -194,7 +216,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             
             <!-- Security Card (Added backdrop-blur for glass effect) -->
-            <a href="https://wa.me/254700000000?text=Hi+UrbanKeja+I+am+enquiring+about+Security+Services" target="_blank" 
+            <a href="https://wa.me/254727400978?text=Hi+UrbanKeja+I+am+enquiring+about+Security+Services" target="_blank" 
                class="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 hover:border-blue-500 hover:bg-white/20 transition-all group block">
                 <div class="text-blue-400 mb-6 text-4xl group-hover:scale-110 transition">🛡️</div>
                 <h3 class="text-xl font-bold text-white mb-2">Top Security</h3>
@@ -202,7 +224,7 @@
             </a>
 
             <!-- Movers Card -->
-            <a href="https://wa.me/254700000000?text=Hi+UrbanKeja+I+am+enquiring+about+Moving+Services" target="_blank" 
+            <a href="https://wa.me/254727400978?text=Hi+UrbanKeja+I+am+enquiring+about+Moving+Services" target="_blank" 
                class="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 hover:border-blue-500 hover:bg-white/20 transition-all group block">
                 <div class="text-blue-400 mb-6 text-4xl group-hover:scale-110 transition">🚚</div>
                 <h3 class="text-xl font-bold text-white mb-2">Professional Movers</h3>
@@ -210,7 +232,7 @@
             </a>
 
             <!-- Cleaning Card -->
-            <a href="https://wa.me/254700000000?text=Hi+UrbanKeja+I+am+enquiring+about+Cleaning+Services" target="_blank" 
+            <a href="https://wa.me/254727400978?text=Hi+UrbanKeja+I+am+enquiring+about+Cleaning+Services" target="_blank" 
                class="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 hover:border-blue-500 hover:bg-white/20 transition-all group block">
                 <div class="text-blue-400 mb-6 text-4xl group-hover:scale-110 transition">✨</div>
                 <h3 class="text-xl font-bold text-white mb-2">Deep Cleaning</h3>
@@ -218,7 +240,7 @@
             </a>
 
             <!-- Internet Card -->
-            <a href="https://wa.me/254700000000?text=Hi+UrbanKeja+I+am+enquiring+about+Internet+Setup" target="_blank" 
+            <a href="https://wa.me/254727400978?text=Hi+UrbanKeja+I+am+enquiring+about+Internet+Setup" target="_blank" 
                class="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 hover:border-blue-500 hover:bg-white/20 transition-all group block">
                 <div class="text-blue-400 mb-6 text-4xl group-hover:scale-110 transition">📶</div>
                 <h3 class="text-xl font-bold text-white mb-2">Fast Internet</h3>
@@ -244,33 +266,49 @@
 
         <!-- Quick Links -->
         <div>
-            <h4 class="font-bold text-gray-900 mb-4">Quick Links</h4>
-            <ul class="text-gray-500 text-sm space-y-2">
-                <li><a href="#" class="hover:text-blue-600">Browse Properties</a></li>
-                <li><a href="#" class="hover:text-blue-600">List Your Property</a></li>
-                <li><a href="#" class="hover:text-blue-600">Service Partners</a></li>
-                <li><a href="/terms" class="hover:text-blue-600">Terms of Service</a></li>
-            </ul>
-        </div>
+    <h4 class="font-bold text-gray-900 mb-4">Quick Links</h4>
+    <ul class="text-gray-500 text-sm space-y-2">
+        <!-- Goes to the top of the homepage -->
+        <li><a href="#top" class="hover:text-blue-600 transition">Browse Properties</a></li>
+        
+        <!-- Goes to the listing form (We created this route earlier) -->
+        <li><a href="{{ route('properties.create') }}" class="hover:text-blue-600 transition">List Your Property</a></li>
+        
+        <!-- Jumps to the services section we built yesterday -->
+        <li><a href="#services" class="hover:text-blue-600 transition">Service Partners</a></li>
+        
+        <!-- We will create this page next -->
+        <li><a href="/terms" class="hover:text-blue-600 transition">Terms of Service</a></li>
+    </ul>
+</div>
 
         <!-- Support -->
-        <div>
-            <h4 class="font-bold text-gray-900 mb-4">Get Support</h4>
-            <ul class="text-gray-500 text-sm space-y-2">
-                <li>Email: <a href="mailto:support@urbankeja.com" class="text-blue-600 font-semibold">support@urbankeja.com</a></li>
-                <li>Phone: <a href="tel:+254727400978" class="text-blue-600 font-semibold">+254 727 400 978</a></li>
-                <li>WhatsApp: <a href="#" class="text-green-600 font-semibold">Chat with us</a></li>
-                <li>Office: Weitethia Hse, Thika</li>
-            </ul>
-        </div>
-
+       <div>
+    <h4 class="font-bold text-gray-900 mb-4">Get Support</h4>
+    <ul class="text-gray-500 text-sm space-y-2">
+        <!-- Opens the user's email app -->
+        <li>Email: <a href="mailto:support@urbankeja.com" class="text-blue-600 font-semibold hover:underline">support@urbankeja.com</a></li>
+        
+        <!-- Opens the phone dialer -->
+        <li>Phone: <a href="tel:+254727400978" class="text-blue-600 font-semibold hover:underline">+254 727 400 978</a></li>
+        
+        <!-- Opens WhatsApp with a pre-filled message -->
+        <li>WhatsApp: <a href="https://wa.me/254727400978?text=Hi+UrbanKeja+I+need+help+with..." target="_blank" class="text-green-600 font-semibold hover:underline">Chat with us</a></li>
+        
+        <li>Office: Weitethie Hse, Thika</li>
+    </ul>
+</div>
         <!-- Recommendation: Newsletter/Trust Badge -->
         <div>
             <h4 class="font-bold text-gray-900 mb-4">Stay Updated</h4>
             <p class="text-gray-500 text-xs mb-4">Get notified when new houses hit the market in your favorite estates.</p>
             <form class="flex gap-2">
-                <input type="email" placeholder="Your email" class="bg-gray-100 border-none rounded-lg p-2 text-sm flex-grow focus:ring-2 focus:ring-blue-500">
-                <button class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Join</button>
+                <input type="email" id="newsletter-email" placeholder="Your email" class="bg-gray-100 border-none rounded-lg p-2 text-sm flex-grow focus:ring-2 focus:ring-blue-500">
+               <button type="button" 
+        onclick="subscribeUser()" 
+        class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition">
+    Join
+</button>
             </form>
         </div>
     </div>
@@ -280,6 +318,24 @@
         <p>© {{ date('Y') }} UrbanKeja Limited. All rights reserved. Made for Nairobi with ❤️</p>
     </div>
 </footer>
+<script>
+    function subscribeUser() {
+        // 1. Get the input element
+        const emailInput = document.getElementById('newsletter-email');
+        
+        // 2. Check if it's empty
+        if (emailInput.value === "") {
+            alert("Please enter your email address first!");
+            return;
+        }
+
+        // 3. Show the Thank You message
+        alert('Thank you for joining UrbanKeja! We will notify you soon.');
+
+        // 4. THE MAGIC: Clear the input box
+        emailInput.value = "";
+    }
+</script>
 
 </body>
 </html>

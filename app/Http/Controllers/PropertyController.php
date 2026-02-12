@@ -6,194 +6,109 @@ use App\Models\Property;
 use App\Models\PropertyImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Intervention\Image\Laravel\Facades\Image;
 
 class PropertyController extends Controller
 {
-    // 1. Show the form to create a listing
+    // 1. PUBLIC: Show all properties on the homepage/listings page
+    public function allProperties(Request $request)
+    {
+        $query = Property::query();
+
+        if ($request->has('search')) {
+            $query->where('estate', 'like', '%' . $request->search . '%')
+                  ->orWhere('city', 'like', '%' . $request->search . '%')
+                  ->orWhere('title', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('price_range')) {
+            $prices = explode('-', $request->price_range);
+            $query->whereBetween('price', [$prices[0], $prices[1]]);
+        }
+
+        $properties = $query->latest()->get();
+        return view('welcome', compact('properties'));
+    }
+
+    // 2. AGENT: Show only the logged-in agent's houses
+    public function myListings()
+    {
+        $properties = Property::where('user_id', Auth::id())->latest()->get();
+        return view('properties.index', compact('properties'));
+    }
+
+    // 3. AGENT: Show the upload form
     public function create()
     {
         return view('properties.create');
     }
 
-    // 2. Save the listing to the database
+    // 4. AGENT: Save the house and upload to Cloudinary
     public function store(Request $request)
     {
-        // Validate the incoming data
         $request->validate([
             'title' => 'required',
             'price' => 'required|numeric',
-            'city' => 'required',
-            'estate' => 'required',
-            'landmark' => 'required',
-            'images' => 'required', 
+            'images' => 'required',
         ]);
 
-        // Create the Property (This is the line that was red)
+        // Create Property first
         $property = Property::create([
-            'user_id'     => Auth::id(),
-            'title'       => $request->title,
+            'user_id' => Auth::id(),
+            'title' => $request->title,
             'description' => $request->description,
-            'price'       => $request->price,
-            'type'        => $request->type,
-            'city'        => $request->city,
-            'estate'      => $request->estate,
-            'landmark'    => $request->landmark,
-            'has_water'   => $request->has('has_water'),
-            'has_wifi'    => $request->has('has_wifi'),
+            'price' => $request->price,
+            'type' => $request->type,
+            'city' => $request->city,
+            'estate' => $request->estate,
+            'landmark' => $request->landmark,
+            'has_water' => $request->has('has_water'),
+            'has_wifi' => $request->has('has_wifi'),
             'has_parking' => $request->has('has_parking'),
-            'has_security'=> $request->has('has_security'),
-            'is_quiet'    => $request->has('is_quiet'),
-            'near_transport'=> $request->has('near_transport'),
-            'near_shopping'  => $request->has('near_shopping'),
-            'has_view'       => $request->has('has_view'),
-
+            'has_security' => $request->has('has_security'),
         ]);
 
-        // Handle the images
-        // 3. Handle Multiple Images with Watermarking
-if ($request->hasFile('images')) {
-    foreach ($request->file('images') as $index => $file) {
-        
-        // Load the image into the editor
-        $image = Image::read($file);
+        // Handle Multiple Cloudinary Uploads
+        if ($request->hasFile('images')) {
+            $files = is_array($request->file('images')) ? $request->file('images') : [$request->file('images')];
+            
+            $cloudinary = new \Cloudinary\Cloudinary([
+                'cloud' => [
+                    'cloud_name' => 'dnbe54etq',
+                    'api_key'    => '224945887766886',
+                    'api_secret' => 'ItlkPVjl8Mpy0x2QrBmy1mxTp_s'
+                ]
+            ]);
 
-        // Add the Watermark text (Bottom Right)
-        $image->text('URBANKEJA', $image->width() - 20, $image->height() - 20, function($font) {
-            $font->file(public_path('fonts/Roboto-Bold.ttf')); // We will add this font next
-            $font->size(50);
-            $font->color('#ffffff');
-            $font->align('right');
-            $font->valign('bottom');
-        });
+            foreach ($files as $index => $file) {
+                $upload = $cloudinary->uploadApi()->upload($file->getRealPath(), ['folder' => 'urbankeja']);
+                $url = $upload['secure_url'];
 
-        // Generate a unique name and save it
-        $filename = time() . '_' . $index . '.jpg';
-        $image->toJpeg(80)->save(storage_path('app/public/properties/' . $filename));
-        
-        $path = 'properties/' . $filename;
+                PropertyImage::create([
+                    'property_id' => $property->id,
+                    'image_path' => $url
+                ]);
 
-        // Save paths as we did before
-        if ($index == 0) {
-            $property->update(['image' => $path]);
+                if ($index === 0) {
+                    $property->update(['image' => $url]);
+                }
+            }
         }
-
-        PropertyImage::create([
-            'property_id' => $property->id,
-            'image_path'  => $path,
-        ]);
-    }
-}
-        
 
         return redirect()->route('dashboard')->with('success', 'Keja listed successfully!');
     }
 
-    // 3. Show a single house page
+    // 5. PUBLIC: Show single house details
     public function show(Property $property)
     {
         $property->load('images');
         return view('properties.show', compact('property'));
     }
 
-    // 4. Manage listings for the logged-in user
-   public function index(\Illuminate\Http\Request $request)
-{
-    $search = $request->query('search');
-    $priceRange = $request->query('price_range');
-
-    $query = \App\Models\Property::query();
-
-    // 1. Location/Estate Filter
-    if ($search) {
-        $query->where(function($q) use ($search) {
-            $q->where('estate', 'LIKE', "%{$search}%")
-              ->orWhere('city', 'LIKE', "%{$search}%")
-              ->orWhere('title', 'LIKE', "%{$search}%");
-        });
-    }
-
-    // 2. Price Range Filter
-    if ($priceRange) {
-        // Split the string '10000-20000' into two numbers
-        $prices = explode('-', $priceRange);
-        $min = $prices[0];
-        $max = $prices[1];
-
-        $query->whereBetween('price', [$min, $max]);
-    }
-
-    $properties = $query->latest()->get();
-
-    return view('welcome', compact('properties'));
-}
-    // 5. Delete a listing
+    // 6. AGENT: Delete a house
     public function destroy(Property $property)
     {
-        if ($property->user_id !== Auth::id()) {
-            abort(403);
-        }
+        if ($property->user_id !== Auth::id()) { abort(403); }
         $property->delete();
-        return redirect()->back()->with('success', 'Listing deleted!');
+        return back()->with('success', 'Property deleted.');
     }
-    // 1. Show all unverified users
-
-
-// 1. Show ALL agents (Verified and Unverified)
-public function adminIndex()
-{
-    if (auth()->user()->email !== 'brayokabaridi5511@gmail.com') { 
-        abort(403);
-    }
-
-    // Get everyone except yourself
-    $users = \App\Models\User::where('id', '!=', auth()->id())->get();
-    return view('admin.verify', compact('users'));
-}
-
-// 2. Toggle Verification (Verify or Revoke)
-public function adminToggleUser(\App\Models\User $user)
-{
-    // If they were verified, this makes them unverified (and vice versa)
-    $user->update(['is_verified' => !$user->is_verified]);
-    
-    $status = $user->is_verified ? 'approved' : 'suspended';
-    return redirect()->back()->with('success', 'Agent ' . $user->name . ' has been ' . $status . '!');
-}
-// 1. Show EVERY house on UrbanKeja
-public function adminProperties()
-{
-    if (auth()->user()->email !== 'brayokabaridi5511@gmail.com') { abort(403); }
-
-    $properties = Property::with('user')->latest()->get();
-    return view('admin.properties', compact('properties'));
-}
-
-// 2. Head Admin Delete Power
-public function adminDestroyProperty(Property $property)
-{
-    if (auth()->user()->email !== 'brayokabaridi5511@gmail.com') { abort(403); }
-
-    $property->delete();
-    return redirect()->back()->with('success', 'The listing has been removed from UrbanKeja.');
-}
-
-// PERMANENTLY REMOVE AN AGENT AND ALL THEIR HOUSES
-public function adminDestroyUser(\App\Models\User $user)
-{
-    // Security check
-    if (auth()->user()->email !== 'brayokabaridi5511@gmail.com') { abort(403); }
-
-    // This will delete the user and all their listings automatically 
-    // because of the "onDelete('cascade')" we set in the migrations.
-    $user->delete();
-
-    return redirect()->back()->with('success', 'Agent and all their listings have been permanently removed.');
-}
-public function allProperties()
-{
-    // Get all properties, 12 per page, latest first
-    $properties = \App\Models\Property::latest()->paginate(12);
-    return view('properties.index', compact('properties'));
-}
 }

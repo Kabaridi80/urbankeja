@@ -24,6 +24,13 @@
         </div>
     @endif
 
+    <!-- Success Message Alert -->
+@if(session('success'))
+    <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-2xl flex items-center gap-3 shadow-sm animate-bounce">
+        <span>✅</span>
+        <p class="font-bold">{{ session('success') }}</p>
+    </div>
+@endif
     <div class="mt-8">
         <a href="{{ route('properties.index') }}" class="text-gray-600 underline">Manage My Listings</a>
     </div>
