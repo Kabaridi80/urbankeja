@@ -36,4 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/setup-admin', function () {
+    $user = User::create([
+        'name' => 'Urban Keja Admin',
+        'email' => 'admin@urbankeja.com', // Use this to log in
+        'password' => Hash::make('Admin@2026'), // Use this as password
+        'role' => 'admin', // Make sure this matches your 'admin' column name
+    ]);
+    return "Admin Created!";
+});
+
 require __DIR__.'/auth.php';
