@@ -3,7 +3,10 @@
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
 
 // --- PUBLIC ROUTES ---
 Route::get('/', [PropertyController::class, 'allProperties'])->name('home');
@@ -35,15 +38,26 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+Route::get('/fix-everything', function () {
+    try {
+        // 1. Run the database migrations (creates the tables)
+        Artisan::call('migrate', ['--force' => true]);
+        $output1 = Artisan::output();
 
-Route::get('/setup-admin', function () {
-    $user = User::create([
-        'name' => 'Urban Keja Admin',
-        'email' => 'admin@urbankeja.com', // Use this to log in
-        'password' => Hash::make('Admin@2026'), // Use this as password
-        'role' => 'admin', // Make sure this matches your 'admin' column name
-    ]);
-    return "Admin Created!";
+        // 2. Create the Admin User
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@urbankeja.com'], // Checks if exists
+            [
+                'name' => 'Urban Keja Admin',
+                'password' => Hash::make('Admin123!'), // Change this later
+                'role' => 'admin', // Ensure this matches your column name
+            ]
+        );
+
+        return "Database Migrated! Admin Created! Log in with: admin@urbankeja.com and password: Admin123!";
+        
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
 });
-
 require __DIR__.'/auth.php';
