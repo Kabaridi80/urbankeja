@@ -16,6 +16,8 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        
+
         <!-- Phone Number -->
         <div class="mt-4">
             <x-input-label for="phone" :value="__('WhatsApp Phone Number (e.g. 254700... or 23480... )')" />
