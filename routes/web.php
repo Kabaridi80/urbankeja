@@ -3,10 +3,12 @@
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+
+
 
 // --- PUBLIC ROUTES ---
 Route::get('/', [PropertyController::class, 'allProperties'])->name('home');
