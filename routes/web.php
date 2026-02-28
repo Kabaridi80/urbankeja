@@ -9,7 +9,22 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
 
 
-
+// MOVE THIS TO THE TOP OF routes/web.php
+Route::get('/launch-keja', function () {
+    try {
+        \Artisan::call('migrate:fresh', ['--force' => true]);
+        
+        \App\Models\User::create([
+            'name' => 'Admin',
+            'email' => 'admin@urbankeja.com',
+            'password' => \Hash::make('Admin123!'),
+            'role' => 'admin' 
+        ]);
+        return "SUCCESS! Database is ready. Go to /login";
+    } catch (\Exception $e) {
+        return "ERROR: " . $e->getMessage();
+    }
+});
 // --- PUBLIC ROUTES ---
 Route::get('/', [PropertyController::class, 'allProperties'])->name('home');
 Route::get('/properties/{property}', [PropertyController::class, 'show'])->name('properties.show');
