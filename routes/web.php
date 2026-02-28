@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
 
 
+Route::get('/clear-zombies', function () {
+    \Artisan::call('view:clear');
+    \Artisan::call('config:clear');
+    \Artisan::call('cache:clear');
+    return "All caches cleared! Try the login page now.";
+});
+
+
 // MOVE THIS TO THE TOP OF routes/web.php
 Route::get('/launch-keja', function () {
     try {
